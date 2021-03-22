@@ -3,6 +3,37 @@
 #include <riru.h>
 #include <malloc.h>
 #include <cstring>
+#include <android/log.h>
+#define LOG_TAG "phucbank"
+#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WAR, LOG_TAG, __VA_ARGS__))
+static int enable_hack;
+static const char* game_name = "com.cib.cibmb";
+
+int isGame(JNIEnv *env, jstring appDataDir) {
+    if (!appDataDir)
+        return 0;
+
+    const char *app_data_dir = env->GetStringUTFChars(appDataDir, NULL);
+
+    int user = 0;
+    static char package_name[256];
+    if (sscanf(app_data_dir, "/data/%*[^/]/%d/%s", &user, package_name) != 2) {
+        if (sscanf(app_data_dir, "/data/%*[^/]/%s", package_name) != 1) {
+            package_name[0] = '\0';
+            LOGW("can't parse %s", app_data_dir);
+            return 0;
+        }
+    }
+    env->ReleaseStringUTFChars(appDataDir, app_data_dir);
+    if (strcmp(package_name, game_name) == 0) {
+        LOGD("detect game: %s", package_name);
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 static int shouldSkipUid(int uid) {
     // By default (if the module does not provide this function in init), Riru will only call
